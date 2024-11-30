@@ -13,3 +13,8 @@ tmp/
 *.iml
 *.ipr
 *.iws
+# Ignore IntelliJ IDEA files
+.idea/
+
+# Ignore BSP files
+.bsp/
