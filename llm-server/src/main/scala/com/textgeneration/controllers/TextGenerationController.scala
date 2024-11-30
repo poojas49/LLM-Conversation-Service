@@ -9,7 +9,9 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Success, Failure}
 import org.slf4j.LoggerFactory
 
-class TextGenerationController(service: TextGenerationService)(implicit ec: ExecutionContext) extends JsonSupport {
+class TextGenerationController(service: TextGenerationService)(implicit ec: ExecutionContext)
+  extends JsonSupport {
+
   private val logger = LoggerFactory.getLogger(getClass)
 
   val routes: Route = {

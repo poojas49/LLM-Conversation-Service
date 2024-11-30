@@ -1,36 +1,37 @@
 package com.textgeneration.services
 
-import com.textgeneration.models._
-import com.textgeneration.repositories.CacheRepository
-import com.textgeneration.clients.LambdaClient
+import com.textgeneration.models.{GenerationRequest, GenerationResponse, ResponseMetadata}
+import com.textgeneration.{BedrockRequest, BedrockResponse}
+import com.textgeneration.clients.ProtoHttpClient
 import scala.concurrent.{Future, ExecutionContext}
 import org.slf4j.LoggerFactory
 
-class TextGenerationService(
-                             cacheRepository: CacheRepository,
-                             lambdaClient: LambdaClient
-                           )(implicit ec: ExecutionContext) {
-
+class TextGenerationService(protoClient: ProtoHttpClient)(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   def generateText(request: GenerationRequest): Future[GenerationResponse] = {
-    val processedQuery = preprocessQuery(request.query)
+    logger.info(s"Processing request: $request")
 
-    cacheRepository.get(processedQuery) match {
-      case Some(cachedResponse) =>
-        logger.info(s"Cache hit for query: $processedQuery")
-        Future.successful(cachedResponse)
+    // Convert JSON request to Protobuf format expected by Lambda
+    val protoRequest = BedrockRequest(
+      inputText = request.query,
+      parameters = Map(
+        "max_tokens" -> request.max_length.toString,
+        "temperature" -> request.temperature.toString
+      )
+    )
 
-      case None =>
-        logger.info(s"Cache miss for query: $processedQuery")
-        for {
-          response <- lambdaClient.generateText(request)
-          _ <- Future.successful(cacheRepository.put(processedQuery, response))
-        } yield response
+    // Send request and convert Protobuf response back to JSON
+    protoClient.generateText(protoRequest).map { protoResponse =>
+      GenerationResponse(
+        response = protoResponse.outputText,
+        metadata = ResponseMetadata(
+          length = protoResponse.tokens.length,
+          stop_reason = "stop_sequence", // Default from Bedrock
+          processing_time_ms = 0, // Could be calculated if needed
+          model = "anthropic.claude-v2"
+        )
+      )
     }
-  }
-
-  private def preprocessQuery(query: String): String = {
-    query.trim.toLowerCase
   }
 }

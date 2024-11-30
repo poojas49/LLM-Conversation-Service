@@ -5,44 +5,29 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import com.textgeneration.controllers.TextGenerationController
 import com.textgeneration.services.TextGenerationService
-import com.textgeneration.repositories.CacheRepository
-import com.textgeneration.clients.LambdaClient
-import com.textgeneration.config.AppConfig
-
-import scala.concurrent.ExecutionContext
+import com.textgeneration.clients.ProtoHttpClient
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Failure}
 import scala.io.StdIn
 import org.slf4j.LoggerFactory
+import com.typesafe.config.ConfigFactory
 
 object TextGenerationApp extends App {
   private val logger = LoggerFactory.getLogger(getClass)
-  private val appConfig = AppConfig.config
+  private val config = ConfigFactory.load()
 
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "TextGenerationSystem")
   implicit val executionContext: ExecutionContext = system.executionContext
 
-  // Initialize components with configuration
-  val cacheRepository = new CacheRepository(
-    maxSize = appConfig.Cache.maxSize,
-    ttlSeconds = appConfig.Cache.ttlSeconds
-  )
+  val host = config.getString("server.host")
+  val port = config.getInt("server.port")
+  val apiGatewayUrl = config.getString("aws.api-gateway.url")
 
-  val lambdaClient = new LambdaClient(
-    apiGatewayUrl = appConfig.AWS.apiGatewayUrl
-  )
-
-  val textGenerationService = new TextGenerationService(
-    cacheRepository,
-    lambdaClient
-  )
-
+  val protoClient = new ProtoHttpClient(apiGatewayUrl)
+  val textGenerationService = new TextGenerationService(protoClient)
   val controller = new TextGenerationController(textGenerationService)
 
-  // Start server
-  val bindingFuture = Http().newServerAt(
-    appConfig.Server.host,
-    appConfig.Server.port
-  ).bind(controller.routes)
+  val bindingFuture = Http().newServerAt(host, port).bind(controller.routes)
 
   bindingFuture.onComplete {
     case Success(binding) =>
@@ -54,15 +39,12 @@ object TextGenerationApp extends App {
       system.terminate()
   }
 
-  // Keep the app running until user presses return
-  try {
-    StdIn.readLine()
-  } finally {
-    bindingFuture
-      .flatMap(_.unbind())
-      .onComplete { _ =>
-        logger.info("Server stopped")
-        system.terminate()
-      }
-  }
+  StdIn.readLine()
+
+  bindingFuture
+    .flatMap(_.unbind())
+    .onComplete(_ => {
+      system.terminate()
+      logger.info("Server stopped")
+    })
 }
