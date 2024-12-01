@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  conversation-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2  # Use the model name provided by the minimal image
+      - SERVICE_HOST=llm-service
+      - SERVICE_PORT=8080
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8081
+      - JAVA_TOOL_OPTIONS=-Xmx512m
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - llm-network
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  ollama:
+    image: alpine/ollama:latest  # Use the minimal CPU-only Ollama image
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama  # Persistent storage for downloaded models
+    networks:
+      - llm-network
+    command: >
+      ollama pull llama3.2 &&
+      ollama serve --address=0.0.0.0:11434
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 8G
+        reservations:
+          memory: 4G
+    restart: unless-stopped
+
+networks:
+  llm-network:
+    name: llm-network  # Use the same network as server
+    external: true     # This tells Docker this network already exists
+
+volumes:
+  ollama_data:

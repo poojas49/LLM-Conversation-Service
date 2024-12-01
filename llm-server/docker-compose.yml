@@ -9,5 +9,26 @@ services:
       - HTTP_HOST=0.0.0.0
       - HTTP_PORT=8080
       - API_GATEWAY_URL=https://scpgq9wnh1.execute-api.us-east-1.amazonaws.com/prod/generate
+      - LAMBDA_URL=https://scpgq9wnh1.execute-api.us-east-1.amazonaws.com/prod/generate
+      - JAVA_TOOL_OPTIONS=-Xmx512m
     volumes:
       - ./logs:/app/logs
+    networks:
+      - llm-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  llm-network:
+    external: true  # This tells Docker to use the existing network

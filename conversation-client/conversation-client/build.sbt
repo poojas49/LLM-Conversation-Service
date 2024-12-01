@@ -16,3 +16,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.5.0",
   "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
+
+assemblyMergeStrategy := {
+  case "META-INF/services/org.slf4j.spi.SLF4JServiceProvider" => MergeStrategy.concat
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case "reference.conf" => MergeStrategy.concat
+  case x => MergeStrategy.first
+}
