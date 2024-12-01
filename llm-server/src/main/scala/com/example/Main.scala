@@ -1,4 +1,3 @@
-// src/main/scala/com/example/Main.scala
 package com.example
 
 import akka.actor.typed.ActorSystem
@@ -15,19 +14,17 @@ object Main extends App {
   implicit val system = ActorSystem(Behaviors.empty, "llm-rest-service")
   implicit val executionContext = system.executionContext
 
-  val config = ServiceConfig()
+  val config = ServiceConfig.load()
   val protobufService = new ProtobufService()
   val llmService = new LlmService(config, protobufService)
   val routes = new LlmRoutes(llmService)
 
-  // Bind and handle shutdown
   val bindingFuture = Http()(system)
-    .newServerAt("localhost", 8080)
+    .newServerAt(config.http.host, config.http.port)
     .bind(routes.routes)
 
-  println(s"Server now online. Please navigate to http://localhost:8080/\nPress RETURN to stop...")
+  println(s"Server now online at http://${config.http.host}:${config.http.port}/\nPress RETURN to stop...")
 
-  // Keep the server running until RETURN is pressed
   StdIn.readLine()
 
   bindingFuture

@@ -17,8 +17,8 @@ class LlmService(config: ServiceConfig, protobufService: ProtobufService)(implic
     val protoRequest = BedrockRequest(
       inputText = request.inputText,
       parameters = Map(
-        "temperature" -> request.temperature.getOrElse(0.7).toString,
-        "max_tokens" -> request.maxTokens.getOrElse(150).toString
+        "temperature" -> request.temperature.getOrElse(config.llm.defaultTemperature).toString,
+        "max_tokens" -> request.maxTokens.getOrElse(config.llm.defaultMaxTokens).toString
       )
     )
 
@@ -33,7 +33,7 @@ class LlmService(config: ServiceConfig, protobufService: ProtobufService)(implic
       response <- Future {
         basicRequest
           .post(uri"${config.apiGatewayUrl}")
-          .header("Content-Type", "application/x-protobuf")
+          .header("Content-Type", config.llm.headers("Content-Type"))
           .body(apiRequest.toJson.compactPrint)
           .response(asJson[ApiGatewayResponse])
           .send(backend)

@@ -2,8 +2,8 @@ package com.example.domain
 
 case class LlmRequest(
                        inputText: String,
-                       temperature: Option[Double] = Some(0.7),
-                       maxTokens: Option[Int] = Some(150)
+                       temperature: Option[Double] = None,
+                       maxTokens: Option[Int] = None
                      )
 
 case class RequestContext(
