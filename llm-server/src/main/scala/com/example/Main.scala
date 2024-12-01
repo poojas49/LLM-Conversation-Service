@@ -105,7 +105,16 @@ object Main extends App {
       }
     })(executionContext)
 
-    StdIn.readLine()
+    sys.addShutdownHook {
+      logger.info("Shutdown hook triggered, initiating graceful shutdown")
+      bindingFuture
+        .flatMap(_.unbind())
+        .onComplete { _ =>
+          system.terminate()
+        }
+    }
+
+    Thread.currentThread().join()
 
     logger.info("Shutdown signal received, initiating graceful shutdown")
     logger.debug("Unbinding server and terminating actor system")
