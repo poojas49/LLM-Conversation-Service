@@ -10,6 +10,15 @@ import play.api.libs.json._
 import scala.util.{Success, Failure, Try}
 import com.typesafe.scalalogging.LazyLogging
 
+/**
+ * API Routes
+ *
+ * Design Principles:
+ * - Clean separation of routing and business logic
+ * - Comprehensive error handling
+ * - Detailed logging for debugging
+ * - Performance monitoring
+ */
 class ConversationRoutes(conversationalAgent: ConversationalAgent) extends LazyLogging {
   logger.info("Initializing ConversationRoutes")
 

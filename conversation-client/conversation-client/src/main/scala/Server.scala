@@ -9,6 +9,38 @@ import scala.concurrent.{ExecutionContextExecutor, Promise}
 import scala.concurrent.duration._
 import config.AppConfig
 
+
+/**
+ * Core System Architecture Overview
+ *
+ * This system implements a conversational AI service that combines two LLM services:
+ * 1. A cloud-based service for primary response generation
+ * 2. Ollama (a local LLM) for follow-up query generation
+ *
+ * The architecture follows these key design principles:
+ * - Separation of concerns (routing, business logic, configuration)
+ * - Immutable data models
+ * - Configurable parameters via HOCON
+ * - Comprehensive logging for debugging and monitoring
+ * - Graceful error handling and shutdown
+ * - Asynchronous processing where appropriate
+ */
+
+/**
+ * Main Server Component
+ *
+ * Responsible for:
+ * - Initializing the Akka actor system
+ * - Setting up HTTP routes
+ * - Managing server lifecycle
+ * - Handling graceful shutdown
+ *
+ * Design Rationale:
+ * - Uses Akka HTTP for robust HTTP handling
+ * - Implements graceful shutdown via Promise for clean termination
+ * - Separates configuration from implementation
+ * - Uses LazyLogging for performance
+ */
 object Server extends App with LazyLogging {
   logger.info("Initializing Conversation System...")
 
@@ -16,14 +48,19 @@ object Server extends App with LazyLogging {
     logger.debug("Creating ActorSystem...")
     ActorSystem(Behaviors.empty, "ConversationSystem")
   }
+
+  // Essential for Akka's asynchronous operations
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
+  // Initialize core components
   logger.info("Initializing ConversationalAgent and Routes...")
   val conversationalAgent = new ConversationalAgent()
   val routes = new ConversationRoutes(conversationalAgent)
 
+  // Shutdown promise ensures clean termination
   val shutdownPromise = Promise[Boolean]()
 
+  // Server binding with configuration-driven parameters
   logger.info(s"Starting server on ${AppConfig.Server.host}:${AppConfig.Server.port}")
   val serverBinding = Http().newServerAt(AppConfig.Server.host, AppConfig.Server.port).bind(routes.routes)
 

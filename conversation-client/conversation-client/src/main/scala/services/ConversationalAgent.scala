@@ -1,11 +1,10 @@
 package services
 
 import com.typesafe.scalalogging.LazyLogging
-import io.github.ollama4j.{OllamaAPI, models => ollamaModels, utils => ollamaUtils}
-import models.{ConversationTurn, LLMRequest, LLMResponse}
+import io.github.ollama4j.{OllamaAPI, utils => ollamaUtils}
+import models.ConversationTurn
 import play.api.libs.json._
 import sttp.client3._
-import sttp.client3.playJson._
 import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,6 +14,17 @@ import java.nio.file.{Paths, Files}
 import java.nio.charset.StandardCharsets
 import config.AppConfig
 
+/**
+ * Core Service Implementation
+ *
+ * Design Principles:
+ * - Service composition (cloud + Ollama)
+ * - Asynchronous operations where beneficial
+ * - Comprehensive error handling
+ * - Detailed logging
+ * - Performance monitoring
+ * - CSV export capability
+ */
 class ConversationalAgent extends LazyLogging {
   logger.info("Initializing ConversationalAgent...")
 
