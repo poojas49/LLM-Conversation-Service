@@ -1,3 +1,6 @@
+# Name - Pooja Shinde
+# Email - pshin8@uic.edu
+
 # LLM-Conversation-Service
 A scalable, distributed system for LLM inference and conversation management using cloud (Bedrock) and local models(Ollama).
 
