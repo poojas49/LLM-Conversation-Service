@@ -1,0 +1,20 @@
+# SBT and Scala ignores
+project/target/
+project/project/
+target/
+lib_managed/
+logs/
+tmp/
+.cache/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.ipr
+*.iws
+# Ignore IntelliJ IDEA files
+.idea/
+
+# Ignore BSP files
+.bsp/

@@ -1,0 +1,27 @@
+package config
+
+import com.typesafe.config.ConfigFactory
+import scala.concurrent.duration._
+
+object AppConfig {
+  private val config = ConfigFactory.load()
+
+  object Ollama {
+    private val ollamaConfig = config.getConfig("ollama")
+    val host: String = ollamaConfig.getString("host")
+    val model: String = ollamaConfig.getString("model")
+    val requestTimeoutSeconds: Int = ollamaConfig.getInt("request-timeout-seconds")
+  }
+
+  object Service {
+    private val serviceConfig = config.getConfig("service")
+    val host: String = serviceConfig.getString("host")
+    val port: Int = serviceConfig.getInt("port")
+  }
+
+  object Conversation {
+    private val conversationConfig = config.getConfig("conversation")
+    val maxTurns: Int = conversationConfig.getInt("max-turns")
+    val timeoutMinutes: Int = conversationConfig.getInt("timeout-minutes")
+  }
+}
