@@ -15,6 +15,10 @@ case class ConversationResponse(
                                  conversation: Seq[ConversationTurn]
                                )
 
+/**
+ * API Models for external interface
+ * Provides clean separation between internal and external representations
+ */
 object ApiModels {
   // DateTime formatter
   private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
