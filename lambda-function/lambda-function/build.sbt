@@ -4,7 +4,7 @@ ThisBuild / organization := "com.example"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "lambda-bedrock-protobuf",
+    name := "lambda-function",
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value
     ),
