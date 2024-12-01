@@ -27,8 +27,8 @@ class ConversationalAgent extends LazyLogging {
       .body(
         Json.obj(
           "inputText" -> query,
-          "temperature" -> 0.7,
-          "maxTokens" -> 150
+          "temperature" -> AppConfig.CloudService.temperature,
+          "maxTokens" -> AppConfig.CloudService.maxTokens
         ).toString()
       )
 
@@ -50,7 +50,6 @@ class ConversationalAgent extends LazyLogging {
     }
   }
 
-  // Rest of the code remains the same
   def generateOllamaResponse(previousResponse: String): String = {
     val prompt = s"how can you respond to the statement: $previousResponse"
     Try {
@@ -82,7 +81,10 @@ class ConversationalAgent extends LazyLogging {
 
       try {
         // Get cloud response
-        val cloudResponse = Await.result(generateCloudResponse(currentQuery), 30.seconds)
+        val cloudResponse = Await.result(
+          generateCloudResponse(currentQuery),
+          AppConfig.CloudService.requestTimeoutSeconds.seconds
+        )
         logger.info(s"Cloud Response: $cloudResponse")
 
         // Generate next query using Ollama

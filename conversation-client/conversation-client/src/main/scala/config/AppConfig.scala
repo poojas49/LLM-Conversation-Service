@@ -24,4 +24,18 @@ object AppConfig {
     val maxTurns: Int = conversationConfig.getInt("max-turns")
     val timeoutMinutes: Int = conversationConfig.getInt("timeout-minutes")
   }
+
+  object CloudService {
+    private val cloudConfig = config.getConfig("cloud-service")
+    val temperature: Double = cloudConfig.getDouble("temperature")
+    val maxTokens: Int = cloudConfig.getInt("max-tokens")
+    val requestTimeoutSeconds: Int = cloudConfig.getInt("request-timeout-seconds")
+  }
+
+  object Server {
+    private val serverConfig = config.getConfig("server")
+    val host: String = serverConfig.getString("host")
+    val port: Int = serverConfig.getInt("port")
+    val terminationTimeoutSeconds: Int = serverConfig.getInt("termination-timeout-seconds")
+  }
 }

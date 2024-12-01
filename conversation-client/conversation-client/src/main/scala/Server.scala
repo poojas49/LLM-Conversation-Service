@@ -9,6 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.util.{Success, Failure}
 import scala.concurrent.{ExecutionContextExecutor, Promise}
 import scala.concurrent.duration._
+import config.AppConfig
 
 object Server extends App with LazyLogging {
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "ConversationSystem")
@@ -17,12 +18,9 @@ object Server extends App with LazyLogging {
   val conversationalAgent = new ConversationalAgent()
   val routes = new ConversationRoutes(conversationalAgent)
 
-  val host = "0.0.0.0"
-  val port = 8081
-
   val shutdownPromise = Promise[Boolean]()
 
-  val serverBinding = Http().newServerAt(host, port).bind(routes.routes)
+  val serverBinding = Http().newServerAt(AppConfig.Server.host, AppConfig.Server.port).bind(routes.routes)
 
   serverBinding.onComplete {
     case Success(binding) =>
@@ -30,7 +28,7 @@ object Server extends App with LazyLogging {
       logger.info(s"Server online at http://${address.getHostString}:${address.getPort}/")
 
       sys.addShutdownHook {
-        binding.terminate(10.seconds).onComplete { _ =>
+        binding.terminate(AppConfig.Server.terminationTimeoutSeconds.seconds).onComplete { _ =>
           system.terminate()
           shutdownPromise.success(true)
         }
