@@ -9,6 +9,33 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import scala.concurrent.ExecutionContext
 import org.slf4j.LoggerFactory
 
+/**
+ * HTTP Routes Definition
+ * =====================
+ *
+ * Defines the REST API endpoints for the LLM service, handling HTTP routing
+ * and request/response mapping.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Clean REST API structure
+ * - Versioned endpoints
+ * - Consistent error handling
+ * - Request/response logging
+ *
+ * API Endpoints:
+ * ------------
+ * POST /api/v1/generate
+ *   - Input: LlmRequest
+ *   - Output: LlmResponse
+ *   - Error: ErrorResponse
+ *
+ * Error Handling:
+ * -------------
+ * - HTTP 500 for internal errors
+ * - Structured error responses
+ * - Error logging with stack traces
+ */
 class LlmRoutes(llmService: LlmService)(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
 

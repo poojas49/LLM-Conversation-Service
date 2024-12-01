@@ -11,6 +11,38 @@ import scala.util.{Success, Failure}
 import scala.io.StdIn
 import scala.concurrent.duration._
 
+/**
+ * Main Application Entry Point
+ * ===========================
+ *
+ * This is the entry point for the LLM REST service application. It initializes and coordinates
+ * all core components of the system.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Uses Akka Actor System for reactive, non-blocking operations
+ * - Implements structured initialization and shutdown sequences
+ * - Includes health monitoring for production readiness
+ * - Provides comprehensive error handling and logging
+ *
+ * Key Components:
+ * -------------
+ * 1. Actor System: Core runtime for reactive operations
+ * 2. HTTP Server: Handles incoming REST requests
+ * 3. Service Initialization: Sets up LLM and Protobuf services
+ * 4. Health Monitoring: Regular system health checks
+ * 5. Graceful Shutdown: Proper resource cleanup
+ *
+ * Processing Flow:
+ * --------------
+ * 1. Initialize ActorSystem and execution context
+ * 2. Load configuration
+ * 3. Initialize services
+ * 4. Start HTTP server
+ * 5. Begin health monitoring
+ * 6. Wait for shutdown signal
+ * 7. Perform graceful shutdown
+ */
 object Main extends App {
   private val logger = LoggerFactory.getLogger(getClass)
 

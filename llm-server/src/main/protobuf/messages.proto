@@ -4,6 +4,38 @@ package com.example.proto;
 
 option java_package = "com.example.proto";
 
+/**
+ * Protocol Buffer Definitions
+ * =========================
+ *
+ * Defines the Protocol Buffer messages used for efficient serialization
+ * of requests and responses.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Efficient binary serialization
+ * - Language-agnostic format
+ * - Schema evolution support
+ * - Strongly typed messages
+ *
+ * Message Definitions:
+ * ------------------
+ * BedrockRequest:
+ *   - input_text: Primary input for generation
+ *   - parameters: Flexible parameter mapping
+ *
+ * BedrockResponse:
+ *   - output_text: Generated content
+ *   - confidence_scores: Quality metrics
+ *   - tokens: Token breakdown
+ *
+ * Features:
+ * --------
+ * - Map fields for flexible parameters
+ * - Repeated fields for lists
+ * - Binary efficiency
+ * - Cross-platform compatibility
+ */
 message BedrockRequest {
   string input_text = 1;
   map<string, string> parameters = 2;

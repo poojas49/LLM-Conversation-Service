@@ -11,6 +11,37 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.util.UUID
 import org.slf4j.LoggerFactory
 
+/**
+ * LLM Service Implementation
+ * =========================
+ *
+ * Core service for handling Language Model requests and responses. Manages the complete
+ * lifecycle of LLM query processing.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Non-blocking operations using Future for scalability
+ * - Protocol Buffers for efficient serialization
+ * - Comprehensive error handling and recovery
+ * - Detailed request tracing through logging
+ *
+ * Key Features:
+ * -----------
+ * 1. Request Validation & Normalization
+ * 2. Protocol Buffer Message Creation
+ * 3. Base64 Encoding/Decoding
+ * 4. API Gateway Integration
+ * 5. Response Processing
+ *
+ * Processing Pipeline:
+ * -----------------
+ * 1. Validate and normalize input parameters
+ * 2. Create Protobuf request
+ * 3. Encode for transport
+ * 4. Send to API Gateway
+ * 5. Process and decode response
+ * 6. Handle errors at each stage
+ */
 class LlmService(config: ServiceConfig, protobufService: ProtobufService)(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val backend = HttpURLConnectionBackend()

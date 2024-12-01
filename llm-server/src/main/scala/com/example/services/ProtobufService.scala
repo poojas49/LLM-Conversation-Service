@@ -5,6 +5,34 @@ import java.util.Base64
 import scala.util.Try
 import org.slf4j.LoggerFactory
 
+/**
+ * Protocol Buffer Service
+ * ======================
+ *
+ * Handles all Protocol Buffer serialization and deserialization operations with
+ * Base64 encoding for transport safety.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Type-safe message handling
+ * - Error handling with Try monad
+ * - Base64 encoding for transport safety
+ * - Comprehensive logging for debugging
+ *
+ * Key Operations:
+ * -------------
+ * 1. Protobuf Message Encoding
+ * 2. Base64 Conversion
+ * 3. Error Recovery
+ * 4. Message Validation
+ *
+ * Error Handling:
+ * -------------
+ * - Wraps operations in Try for safe error handling
+ * - Detailed logging of failure scenarios
+ * - Proper error propagation
+ * - Input validation
+ */
 class ProtobufService {
   private val logger = LoggerFactory.getLogger(getClass)
 

@@ -1,7 +1,6 @@
 package com.example.config
 
 import com.typesafe.config.{Config, ConfigFactory}
-import scala.concurrent.duration._
 import org.slf4j.LoggerFactory
 import scala.util.{Try, Success, Failure}
 
@@ -22,6 +21,44 @@ case class ServiceConfig(
                           llm: LlmConfig
                         )
 
+
+/**
+ * Service Configuration
+ * ===================
+ *
+ * Handles application configuration loading and validation using Typesafe Config.
+ * Provides strongly-typed configuration objects.
+ *
+ * Design Rationale:
+ * ----------------
+ * - Type-safe configuration
+ * - Validation at load time
+ * - Hierarchical structure
+ * - Environment variable support
+ *
+ * Configuration Structure:
+ * ---------------------
+ * HttpConfig:
+ *   - Server binding settings
+ *   - Host and port configuration
+ *
+ * LlmConfig:
+ *   - LLM processing parameters
+ *   - Default values
+ *   - Header configurations
+ *
+ * ServiceConfig:
+ *   - Top-level configuration
+ *   - Integration endpoints
+ *   - Component configurations
+ *
+ * Validation Rules:
+ * ---------------
+ * - Port range: 0-65535
+ * - Temperature range: 0.0-1.0
+ * - Required fields checking
+ * - URL format validation
+ */
 object ServiceConfig {
   private val logger = LoggerFactory.getLogger(getClass)
 
