@@ -9,41 +9,100 @@ import sttp.client3.sprayJson._
 import spray.json._
 import scala.concurrent.{ExecutionContext, Future}
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
 class LlmService(config: ServiceConfig, protobufService: ProtobufService)(implicit ec: ExecutionContext) {
+  private val logger = LoggerFactory.getLogger(getClass)
   private val backend = HttpURLConnectionBackend()
 
   def processQuery(request: LlmRequest): Future[String] = {
-    val protoRequest = BedrockRequest(
-      inputText = request.inputText,
-      parameters = Map(
-        "temperature" -> request.temperature.getOrElse(config.llm.defaultTemperature).toString,
-        "max_tokens" -> request.maxTokens.getOrElse(config.llm.defaultMaxTokens).toString
+    logger.info(s"Starting LLM query processing")
+    logger.debug(s"Processing request with input text length: ${request.inputText.length}")
+    logger.trace(s"Request details - Temperature: ${request.temperature}, MaxTokens: ${request.maxTokens}")
+
+    val protoRequest = {
+      logger.debug("Creating BedrockRequest with configured parameters")
+      val temp = request.temperature.getOrElse(config.llm.defaultTemperature)
+      val tokens = request.maxTokens.getOrElse(config.llm.defaultMaxTokens)
+
+      logger.trace(s"Using temperature: $temp, max tokens: $tokens")
+      BedrockRequest(
+        inputText = request.inputText,
+        parameters = Map(
+          "temperature" -> temp.toString,
+          "max_tokens" -> tokens.toString
+        )
       )
-    )
+    }
+    logger.debug("BedrockRequest created successfully")
 
     for {
-      base64Request <- Future.fromTry(protobufService.encodeToBase64(protoRequest))
-
-      apiRequest = ApiGatewayRequest(
-        queryStringParameters = Map("query" -> base64Request),
-        requestContext = RequestContext(UUID.randomUUID().toString)
-      )
-
-      response <- Future {
-        basicRequest
-          .post(uri"${config.apiGatewayUrl}")
-          .header("Content-Type", config.llm.headers("Content-Type"))
-          .body(apiRequest.toJson.compactPrint)
-          .response(asJson[ApiGatewayResponse])
-          .send(backend)
-          .body
-          .fold(error => throw new RuntimeException(error), identity)
+      base64Request <- {
+        logger.debug("Encoding proto request to base64")
+        Future.fromTry(protobufService.encodeToBase64(protoRequest))
+          .andThen {
+            case scala.util.Success(_) => logger.debug("Successfully encoded request to base64")
+            case scala.util.Failure(ex) =>
+              logger.error("Failed to encode proto request to base64", ex)
+              logger.warn("Query processing will fail due to encoding error")
+          }
       }
 
-      decodedProto <- Future.fromTry(
-        protobufService.decodeFromBase64[BedrockResponse](response.body)
-      )
-    } yield decodedProto.outputText
+      apiRequest = {
+        val requestId = UUID.randomUUID().toString
+        logger.debug(s"Creating API Gateway request with ID: $requestId")
+        logger.trace(s"Base64 request length: ${base64Request.length}")
+
+        ApiGatewayRequest(
+          queryStringParameters = Map("query" -> base64Request),
+          requestContext = RequestContext(requestId)
+        )
+      }
+
+      response <- {
+        logger.info(s"Sending request to API Gateway: ${config.apiGatewayUrl}")
+        Future {
+          basicRequest
+            .post(uri"${config.apiGatewayUrl}")
+            .header("Content-Type", config.llm.headers("Content-Type"))
+            .body(apiRequest.toJson.compactPrint)
+            .response(asJson[ApiGatewayResponse])
+            .send(backend)
+            .body
+            .fold(
+              error => {
+                logger.error(s"API Gateway request failed", new RuntimeException(error))
+                logger.warn(s"Request ID ${apiRequest.requestContext.requestId} failed")
+                logger.debug(s"Error details: $error")
+                throw new RuntimeException(error)
+              },
+              response => {
+                logger.info(s"Received response from API Gateway with status: ${response.statusCode}")
+                logger.debug(s"Response body length: ${response.body.length}")
+                logger.trace(s"Response headers: ${response.headers}")
+                response
+              }
+            )
+        }
+      }
+
+      decodedProto <- {
+        logger.debug("Decoding API Gateway response from base64")
+        Future.fromTry(
+          protobufService.decodeFromBase64[BedrockResponse](response.body)
+        ).andThen {
+          case scala.util.Success(_) => logger.debug("Successfully decoded response")
+          case scala.util.Failure(ex) =>
+            logger.error("Failed to decode API Gateway response", ex)
+            logger.warn(s"Request ID ${apiRequest.requestContext.requestId} failed at decoding stage")
+        }
+      }
+    } yield {
+      val outputLength = decodedProto.outputText.length
+      logger.info(s"Successfully completed LLM query processing")
+      logger.debug(s"Generated response length: $outputLength")
+      logger.trace(s"Response preview: ${decodedProto.outputText.take(50)}...")
+      decodedProto.outputText
+    }
   }
 }
