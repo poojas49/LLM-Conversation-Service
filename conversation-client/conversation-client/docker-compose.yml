@@ -8,8 +8,8 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=llama3.2  # Use the model name provided by the minimal image
+      - OLLAMA_HOST=http://host.docker.internal:11434  # Point to local Ollama
+      - OLLAMA_MODEL=llama2:latest  # Use the locally installed model name
       - SERVICE_HOST=llm-service
       - SERVICE_PORT=8080
       - SERVER_HOST=0.0.0.0
@@ -19,8 +19,6 @@ services:
       - ./logs:/app/logs
     networks:
       - llm-network
-    depends_on:
-      - ollama
     deploy:
       resources:
         limits:
@@ -35,30 +33,10 @@ services:
       retries: 3
     restart: unless-stopped
 
-  ollama:
-    image: alpine/ollama:latest  # Use the minimal CPU-only Ollama image
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama  # Persistent storage for downloaded models
-    networks:
-      - llm-network
-    command: >
-      ollama pull llama3.2 &&
-      ollama serve --address=0.0.0.0:11434
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 8G
-        reservations:
-          memory: 4G
-    restart: unless-stopped
-
 networks:
   llm-network:
-    name: llm-network  # Use the same network as server
-    external: true     # This tells Docker this network already exists
+    name: llm-network  # Use the same network as the server
+    external: true     # Ensure the network already exists
 
 volumes:
   ollama_data:
