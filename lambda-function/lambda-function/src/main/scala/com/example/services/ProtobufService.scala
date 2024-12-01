@@ -6,7 +6,20 @@ import scala.util.Try
 import scalapb.json4s.JsonFormat
 import org.slf4j.{Logger, LoggerFactory}
 
+/**
+ * Service for handling Protocol Buffer message serialization and deserialization
+ *
+ * Design Rationale:
+ * - Centralizes all protobuf-related operations
+ * - Provides type-safe conversion methods
+ * - Implements comprehensive error handling and logging
+ * - Supports both binary and JSON formats for flexibility
+ */
 class ProtobufService {
+  // Methods for encoding/decoding protobuf messages to/from base64
+  // Each method includes comprehensive logging and error handling
+
+  // Generic method for decoding base64 to protobuf messages
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
   def decodeFromBase64[T <: GeneratedMessage](base64String: String)(implicit companion: scalapb.GeneratedMessageCompanion[T]): Try[T] = {
@@ -45,6 +58,7 @@ class ProtobufService {
     }
   }
 
+  // Additional utility methods for JSON conversion
   def jsonToProto[T <: GeneratedMessage](json: String)(implicit companion: scalapb.GeneratedMessageCompanion[T]): Try[T] = {
     logger.debug(s"Attempting to convert JSON to protobuf message of type: ${companion.scalaDescriptor.fullName}")
     logger.trace(s"Input JSON: $json")

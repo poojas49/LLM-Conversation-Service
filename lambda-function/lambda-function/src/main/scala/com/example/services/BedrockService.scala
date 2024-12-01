@@ -10,16 +10,26 @@ import com.example.proto.messages.{BedrockRequest, BedrockResponse}
 import scala.util.Try
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization
 import org.json4s.native.Serialization.write
 import org.slf4j.{Logger, LoggerFactory}
 
+/**
+ * Service for interacting with AWS Bedrock API
+ *
+ * Design Rationale:
+ * - Encapsulates all Bedrock-specific logic
+ * - Manages client lifecycle
+ * - Implements retry logic and error handling
+ * - Provides clean separation from protobuf and Lambda handling
+ * - Uses configuration injection for flexibility
+ */
 class BedrockService(config: BedrockConfig) {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   implicit val formats = DefaultFormats
 
   logger.info(s"Initializing BedrockService with region: ${config.region} and model: ${config.modelId}")
 
+  // Initialize AWS clients with appropriate configuration
   private val httpClient = {
     logger.debug("Building HTTP client for Bedrock service")
     UrlConnectionHttpClient.builder().build()
@@ -33,6 +43,7 @@ class BedrockService(config: BedrockConfig) {
       .build()
   }
 
+  // Main method for invoking Bedrock model
   def invokeModel(request: BedrockRequest): Try[BedrockResponse] = {
     logger.info(s"Invoking Bedrock model with input length: ${request.inputText.length}")
     logger.debug(s"Request parameters: ${request.parameters}")
