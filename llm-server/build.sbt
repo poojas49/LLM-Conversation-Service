@@ -8,6 +8,22 @@ lazy val root = (project in file("."))
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value
     ),
+
+    // Assembly settings
+    assembly / assemblyMergeStrategy := {
+      case "module-info.class" => MergeStrategy.discard
+      case x if x.endsWith("/module-info.class") => MergeStrategy.discard
+      case "META-INF/versions/9/module-info.class" => MergeStrategy.discard
+      case "google/protobuf/struct.proto" => MergeStrategy.first
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case x if x.contains("sigar") => MergeStrategy.first
+      case x if x.contains("io.netty.versions.properties") => MergeStrategy.first
+      case x if x.contains("module-info.class") => MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
+        oldStrategy(x)
+    },
+
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http" % "10.5.0",
       "com.typesafe.akka" %% "akka-stream" % "2.8.0",
@@ -19,6 +35,7 @@ lazy val root = (project in file("."))
       "com.softwaremill.sttp.client3" %% "spray-json" % "3.8.13",
       "org.json4s" %% "json4s-native" % "4.0.6",
       "ch.qos.logback" % "logback-classic" % "1.4.7",
+      "org.slf4j" % "slf4j-api" % "2.0.7",
       "org.scalatest" %% "scalatest" % "3.2.15" % Test
     )
   )
