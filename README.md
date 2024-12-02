@@ -155,30 +155,138 @@ sbt clean compile assembly
 cd ../lambda-function
 sbt clean compile assembly
 ```
+# Deployment Guide
 
-## Deployment
+## Prerequisites
+- Lambda Function configured and deployed as shown in video.
+- AWS Account
+- SBT installed locally
+- Basic understanding of AWS EC2
 
-### 1. Deploy Lambda Function
+## Server Service Deployment
+
+1. Launch EC2 Instance:
+   - Amazon Linux 2023
+   - t2.micro (Free tier)
+   - Security Group: Allow ports 22(SSH) and 8080
+
+2. Deploy Server:
 ```bash
-aws lambda create-function \
-  --function-name bedrock-inference \
-  --runtime java11 \
-  --handler com.example.LambdaHandler \
-  --memory-size 512 \
-  --timeout 30 \
-  --role [IAM-ROLE-ARN] \
-  --zip-file fileb://lambda-function/target/scala-2.13/lambda-function-assembly-0.1.0-SNAPSHOT.jar
+# Install Java
+sudo yum update -y
+sudo yum install -y java-11-amazon-corretto-devel
+
+# Setup Application
+sudo mkdir -p /opt/llm-service
+cd /opt/llm-service
+
+# Create Service
+sudo tee /etc/systemd/system/llm-service.service << 'EOL'
+[Unit]
+Description=LLM REST Service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/llm-service
+ExecStart=/usr/bin/java -jar llm-rest-service.jar
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Deploy JAR and Start Service
+sudo systemctl enable llm-service
+sudo systemctl start llm-service
 ```
 
-### 2. Start REST Service
+## Client Service Deployment
+
+1. Launch EC2 Instance:
+   - Amazon Linux 2023
+   - t2.large (8GB RAM required for Ollama)
+   - Security Group: Allow ports 22(SSH), 8081, and 11434(Ollama)
+
+2. Install Ollama:
 ```bash
-java -jar llm-rest-service/target/scala-2.13/llm-rest-service-assembly-1.0.jar
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull mistral
 ```
 
-### 3. Start Conversation Client
+3. Deploy Client:
 ```bash
-java -jar conversation-client/target/scala-2.13/conversation-client-assembly-1.0.jar
+# Install Java
+sudo yum update -y
+sudo yum install -y java-11-amazon-corretto-devel
+
+# Setup Application
+sudo mkdir -p /opt/conversation-client
+cd /opt/conversation-client
+
+# Create Service
+sudo tee /etc/systemd/system/conversation-client.service << 'EOL'
+[Unit]
+Description=Conversation Client Service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/conversation-client
+ExecStart=/usr/bin/java -Xmx512m -jar conversation-client.jar
+Restart=always
+
+Environment="OLLAMA_HOST=http://localhost:11434"
+Environment="OLLAMA_MODEL=mistral"
+Environment="SERVICE_HOST=<SERVER-EC2-IP>"
+Environment="SERVICE_PORT=8080"
+Environment="SERVER_HOST=0.0.0.0"
+Environment="SERVER_PORT=8081"
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Deploy JAR and Start Services
+sudo systemctl enable ollama conversation-client
+sudo systemctl start ollama conversation-client
 ```
+
+## Testing
+
+1. Test Server Service:
+```bash
+curl -X POST http://<SERVER-EC2-IP>:8080/api/v1/generate \
+-H "Content-Type: application/json" \
+-d '{
+  "inputText": "Hello",
+  "temperature": 0.7,
+  "maxTokens": 100
+}'
+```
+
+2. Test Client Service:
+```bash
+curl -X POST http://<CLIENT-EC2-IP>:8081/conversation \
+-H "Content-Type: application/json" \
+-d '{
+  "initialQuery": "What is the meaning of life?",
+  "outputFile": "/opt/conversation-client/conversation.csv"
+}'
+```
+
+## Monitoring
+
+```bash
+# View service logs
+sudo journalctl -u llm-service -f        # Server logs
+sudo journalctl -u conversation-client -f # Client logs
+sudo journalctl -u ollama -f             # Ollama logs
+```
+
+Note: Replace `<SERVER-EC2-IP>` and `<CLIENT-EC2-IP>` with your actual EC2 instance public IPs.
 
 ## Usage
 
