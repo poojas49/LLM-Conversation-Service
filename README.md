@@ -197,9 +197,15 @@ Restart=always
 WantedBy=multi-user.target
 EOL
 
+# Copy Jar from s3 to ec2 instance
+aws s3 cp s3://llm-rest-service-assembly-0.1.0-SNAPSHOT.jar llm-service.jar
+
 # Deploy JAR and Start Service
 sudo systemctl enable llm-service
 sudo systemctl start llm-service
+
+# Check logs
+tail -f /opt/llm-service/logs/llm-service.log
 ```
 
 ## Client Service Deployment
@@ -212,7 +218,7 @@ sudo systemctl start llm-service
 2. Install Ollama:
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull mistral
+ollama pull llama2
 ```
 
 3. Deploy Client:
@@ -239,7 +245,7 @@ ExecStart=/usr/bin/java -Xmx512m -jar conversation-client.jar
 Restart=always
 
 Environment="OLLAMA_HOST=http://localhost:11434"
-Environment="OLLAMA_MODEL=mistral"
+Environment="OLLAMA_MODEL=llama2:latest"
 Environment="SERVICE_HOST=<SERVER-EC2-IP>"
 Environment="SERVICE_PORT=8080"
 Environment="SERVER_HOST=0.0.0.0"
@@ -249,9 +255,15 @@ Environment="SERVER_PORT=8081"
 WantedBy=multi-user.target
 EOL
 
+# Copy Jar from s3 to ec2 instance
+aws s3 cp s3://conversation-client-deployment/conversation-client-assembly-1.0.jar conversation-client.jar
+
 # Deploy JAR and Start Services
 sudo systemctl enable ollama conversation-client
 sudo systemctl start ollama conversation-client
+
+# Check logs
+tail -f /opt/conversation-client/logs/conversation-server.log
 ```
 
 ## Testing
